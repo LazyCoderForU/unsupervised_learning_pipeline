@@ -1,32 +1,41 @@
 import streamlit as st
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.datasets import fetch_california_housing
 
-# Assume you've collected and preprocessed data
-X = pd.Series(['positive review', 'negative review', 'neutral review'])
-y = pd.Series([1, 0, 2])
+# Load the California housing dataset
+housing = fetch_california_housing()
+X = housing.data
+y = housing.target
 
-# Vectorize the text data
-vectorizer = TfidfVectorizer()
-X_vectorized = vectorizer.fit_transform(X)
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train a Naive Bayes model
-model = MultinomialNB()
-model.fit(X_vectorized, y)
+# Train the regression model (LinearRegression is used as an example)
+model = LinearRegression()
+model.fit(X_train, y_train)
 
-# Streamlit app
-st.title('Sentiment Analysis')
+# Create the Streamlit app
+def main():
+    st.title("California Housing Price Prediction")
 
-text_input = st.text_input('Enter a text:')
+    # Input fields for user features (replace with relevant features from X)
+    longitude = st.number_input("Longitude", min_value=float(X[:, 0].min()), max_value=float(X[:, 0].max()))
+    latitude = st.number_input("Latitude", min_value=float(X[:, 1].min()), max_value=float(X[:, 1].max()))
+    # Add other relevant features as needed
 
-if st.button('Analyze'):
-    vectorized_text = vectorizer.transform([text_input])
-    prediction = model.predict(vectorized_text)[0]
+    # Create a button for prediction
+    if st.button("Predict Price"):
+        # Create a DataFrame with user input (using only selected features)
+        user_input = pd.DataFrame([[longitude, latitude]], columns=["longitude", "latitude"])
 
-    if prediction == 1:
-        st.success('Positive sentiment')
-    elif prediction == 0:
-        st.error('Negative sentiment')
-    else:
-        st.info('Neutral sentiment')
+        # Make prediction
+        prediction = model.predict(user_input)[0]
+
+        # Display prediction
+        st.write("Predicted Price:", round(prediction, 2))
+
+if __name__ == '__main__':
+    main()
