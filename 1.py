@@ -1,41 +1,41 @@
 import streamlit as st
+from sklearn.datasets import load_iris
+from sklearn.cluster import KMeans
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.datasets import fetch_california_housing
 
-# Load the California housing dataset
-housing = fetch_california_housing()
-X = housing.data
-y = housing.target
+# Load the iris dataset
+iris = load_iris()
+X = iris.data
+df = pd.DataFrame(X, columns=iris.feature_names)
 
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Sidebar for user input
+st.sidebar.header('User Input Parameters')
+def user_input_features():
+    sepal_length = st.sidebar.slider('Sepal length', float(df['sepal length (cm)'].min()), float(df['sepal length (cm)'].max()), float(df['sepal length (cm)'].mean()))
+    sepal_width = st.sidebar.slider('Sepal width', float(df['sepal width (cm)'].min()), float(df['sepal width (cm)'].max()), float(df['sepal width (cm)'].mean()))
+    petal_length = st.sidebar.slider('Petal length', float(df['petal length (cm)'].min()), float(df['petal length (cm)'].max()), float(df['petal length (cm)'].mean()))
+    petal_width = st.sidebar.slider('Petal width', float(df['petal width (cm)'].min()), float(df['petal width (cm)'].max()), float(df['petal width (cm)'].mean()))
+    data = {'sepal length (cm)': sepal_length,
+            'sepal width (cm)': sepal_width,
+            'petal length (cm)': petal_length,
+            'petal width (cm)': petal_width}
+    features = pd.DataFrame(data, index=[0])
+    return features
 
-# Train the regression model (LinearRegression is used as an example)
-model = LinearRegression()
-model.fit(X_train, y_train)
+input_df = user_input_features()
 
-# Create the Streamlit app
-def main():
-    st.title("California Housing Price Prediction")
+# Combine user input with the entire dataset
+df = pd.concat([input_df, df], axis=0)
 
-    # Input fields for user features (replace with relevant features from X)
-    longitude = st.number_input("Longitude", min_value=float(X[:, 0].min()), max_value=float(X[:, 0].max()))
-    latitude = st.number_input("Latitude", min_value=float(X[:, 1].min()), max_value=float(X[:, 1].max()))
-    # Add other relevant features as needed
+# Apply KMeans clustering
+kmeans = KMeans(n_clusters=3)
+kmeans.fit(df)
+df['cluster'] = kmeans.predict(df)
 
-    # Create a button for prediction
-    if st.button("Predict Price"):
-        # Create a DataFrame with user input (using only selected features)
-        user_input = pd.DataFrame([[longitude, latitude]], columns=["longitude", "latitude"])
+# Display the cluster of the user input
+st.subheader('Cluster Prediction')
+st.write('The input data belongs to cluster:', kmeans.predict(input_df)[0])
 
-        # Make prediction
-        prediction = model.predict(user_input)[0]
-
-        # Display prediction
-        st.write("Predicted Price:", round(prediction, 2))
-
-if __name__ == '__main__':
-    main()
+# Display the entire dataframe with cluster labels
+st.subheader('Clustered Data')
+st.write(df)
